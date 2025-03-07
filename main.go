@@ -9,7 +9,7 @@ import (
 
 func main() {
 	client := openai.NewClient(
-		option.WithAPIKey("sk-829c6ac87bd64bd5816606de78289470"), // defaults to os.LookupEnv("OPENAI_API_KEY")
+		option.WithAPIKey(""), // defaults to os.LookupEnv("OPENAI_API_KEY")
 		option.WithBaseURL("https://api.deepseek.com"),
 	)
 
