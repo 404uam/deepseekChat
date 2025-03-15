@@ -55,99 +55,41 @@ func main() {
 	textWidget.Wrapping = fyne.TextWrapWord
 	textWidget.Resize(fyne.NewSize(50, 50))
 
-	label := widget.NewLabel("AI Response:")
+	markdown := widget.NewRichTextFromMarkdown("")
+	markdown.Wrapping = fyne.TextWrapWord
+	scrollContainer := container.NewScroll(markdown)
 
 	ch := make(chan string, 1)
 	boundString := binding.NewString()
-	label.Bind(boundString)
 	submitButton := widget.NewButton("ask away!", func() {
-		log.Println(input.Text)
-
+		inputText := input.Text
+		log.Println(inputText)
+		input.Disable()
+		input.SetText("")
 		prevString, _ := boundString.Get()
-		go DoAi(client, ch, input.Text, prevString)
+		go DoAi(client, ch, inputText, prevString)
 		aiResponse := <-ch
 		builder2 := strings.Builder{}
 		builder2.WriteString(prevString + "\n\n" + aiResponse)
+		markdown.AppendMarkdown(builder2.String() + "\n\n")
 		boundString.Set(builder2.String())
+		scrollContainer.ScrollToBottom()
+		input.Enable()
 	})
 
 	textInputWidget := container.NewVBox(input, submitButton)
 
-	label.Wrapping = fyne.TextWrapBreak
-	label.Resize(fyne.NewSize(200, 200))
 	whiteRectangle := canvas.NewRectangle(color.RGBA{
 		R: 255,
 		G: 0,
 		B: 0,
-		A: 100,
+		A: 75,
 	})
 	whiteRectangle.Resize(fyne.NewSize(125, 200))
 	whiteRectangle.SetMinSize(whiteRectangle.Size())
 
-	scrollContainer := container.NewScroll(label)
-
 	content := container.New(layout.NewHBoxLayout(), textWidget, whiteRectangle)
 	content = container.NewBorder(nil, textInputWidget, whiteRectangle, nil, scrollContainer)
-
-	myCanvas.SetContent(content)
-
-	window.Resize(fyne.NewSize(800, 600))
-	/*
-		go func() {
-			time.Sleep(time.Second)
-			previousPrompt, _ := boundString.Get()
-			DoAi(client, ch, "what about the second?", previousPrompt)
-			blah := <-ch
-			println("got here foobar")
-
-			builder := strings.Builder{}
-			builder.WriteString(previousPrompt + "\n\n" + blah)
-
-			boundString.Set(builder.String())
-
-			previousPrompt2, _ := boundString.Get()
-			DoAi(client, ch, "what about mount lougheed?", previousPrompt2)
-			blah2 := <-ch
-			println("got here foobar")
-
-			builder2 := strings.Builder{}
-			builder2.WriteString(previousPrompt + "\n\n" + blah2)
-
-			boundString.Set(builder2.String())
-		}()*/
-
-	window.ShowAndRun()
-}
-
-func buildUI() {
-	myapp := app.New()
-	window := myapp.NewWindow("CHatter")
-	myCanvas := window.Canvas()
-
-	input := widget.NewEntry()
-	input.SetPlaceHolder("Enter your prompt...")
-	textInputWidget := container.NewVBox(input, widget.NewButton("print", func() {
-		log.Println(input.Text)
-	}))
-
-	textBox := canvas.NewText("aiResponse", color.Black)
-
-	textBox.Resize(fyne.NewSize(200, 200))
-	textWidget := widget.NewRichTextFromMarkdown("aiResponse")
-	textWidget.Wrapping = fyne.TextWrapWord
-	textWidget.Resize(fyne.NewSize(50, 50))
-
-	whiteRectangle := canvas.NewRectangle(color.RGBA{
-		R: 255,
-		G: 0,
-		B: 0,
-		A: 100,
-	})
-	whiteRectangle.Resize(fyne.NewSize(200, 200))
-	whiteRectangle.SetMinSize(whiteRectangle.Size())
-	textBox.Move(fyne.NewPos(0, 0))
-	content := container.New(layout.NewHBoxLayout(), textWidget, whiteRectangle)
-	content = container.NewBorder(nil, textInputWidget, whiteRectangle, nil, textWidget)
 
 	myCanvas.SetContent(content)
 
