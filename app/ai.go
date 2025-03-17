@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 	"time"
 
@@ -34,14 +35,7 @@ func DoAi(client *openai.Client, ch chan string, prompt string, previous string)
 	return response
 }
 
-func DoAiWithStreaming(
-	client *openai.Client,
-	ch chan string,
-	markdown *widget.RichText,
-	label *widget.Label,
-	prompt string,
-	previous string,
-) string {
+func DoAiWithStreaming(client *openai.Client, ch chan string, pressed time.Time, markdown *widget.RichText, label *container.Scroll, prompt string, previous string) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
@@ -54,12 +48,15 @@ func DoAiWithStreaming(
 			Model: openai.F(DeepseekChat),
 		})
 	acc := openai.ChatCompletionAccumulator{}
+	timeElapsed := time.Duration(0)
 	label.Show()
 	markdown.Hide()
 	defer close(ch)
 	for chatCompletionStream.Next() {
 		currChunk := chatCompletionStream.Current()
-
+		if timeElapsed == 0 {
+			timeElapsed = time.Since(pressed)
+		}
 		acc.AddChunk(currChunk)
 
 		// When this fires, the current chunk value will not contain content data
@@ -98,7 +95,9 @@ func DoAiWithStreaming(
 
 	println("Total Tokens:", acc.Usage.TotalTokens)
 	println("Finish Reason:", acc.Choices[0].FinishReason)
-	markdown.AppendMarkdown(acc.Choices[0].Message.Content)
+	println("Time from button press to first response: ", timeElapsed.String())
+	markdown.AppendMarkdown(acc.Choices[0].Message.Content + "<br><br>")
+	markdown.AppendMarkdown("<br>")
 	label.Hide()
 	label.Refresh()
 	markdown.Show()

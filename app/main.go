@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Config struct {
@@ -60,11 +61,11 @@ func main() {
 
 	label := widget.NewLabel("")
 	label.Wrapping = fyne.TextWrapWord
-	label.Hide()
 
 	markdownScrollContainer := container.NewScroll(markdown)
 	labelScrollContainer := container.NewScroll(label)
 	markdownOrLabelStack := container.NewStack(markdownScrollContainer, labelScrollContainer)
+	labelScrollContainer.Hide()
 
 	boundString := binding.NewString()
 	label.Bind(boundString)
@@ -85,23 +86,27 @@ func main() {
 		input.Enable()
 	})
 	submitWithStreamingButton := widget.NewButton("stream away!", func() {
+		buttonPressed := time.Now()
 		inputText := input.Text
 		ch2 := make(chan string, 1)
 		log.Println(inputText)
 		input.Disable()
 		input.SetText("")
 		prevString, _ := boundString.Get()
-		go DoAiWithStreaming(client, ch2, markdown, label, inputText, prevString)
+		go DoAiWithStreaming(client, ch2, buttonPressed, markdown, labelScrollContainer, inputText, prevString)
 
 		go func() {
 			builder2 := strings.Builder{}
-			builder2.WriteString(prevString + "\n\n")
+			builder2.WriteString(prevString)
 			for aiResponse := range ch2 {
 				builder2.WriteString(aiResponse)
 				boundString.Set(builder2.String())
 				labelScrollContainer.ScrollToBottom()
 				markdownScrollContainer.ScrollToBottom()
 			}
+			builder2.WriteString("\n\n")
+			boundString.Set(builder2.String())
+			markdownScrollContainer.ScrollToBottom()
 			input.Enable()
 		}()
 	})
