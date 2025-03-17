@@ -57,11 +57,19 @@ func main() {
 
 	markdown := widget.NewRichTextFromMarkdown("")
 	markdown.Wrapping = fyne.TextWrapWord
-	scrollContainer := container.NewScroll(markdown)
 
-	ch := make(chan string, 1)
+	label := widget.NewLabel("")
+	label.Wrapping = fyne.TextWrapWord
+	label.Hide()
+
+	markdownScrollContainer := container.NewScroll(markdown)
+	labelScrollContainer := container.NewScroll(label)
+	markdownOrLabelStack := container.NewStack(markdownScrollContainer, labelScrollContainer)
+
 	boundString := binding.NewString()
+	label.Bind(boundString)
 	submitButton := widget.NewButton("ask away!", func() {
+		ch := make(chan string, 1)
 		inputText := input.Text
 		log.Println(inputText)
 		input.Disable()
@@ -73,11 +81,32 @@ func main() {
 		builder2.WriteString(prevString + "\n\n" + aiResponse)
 		markdown.AppendMarkdown(builder2.String() + "\n\n")
 		boundString.Set(builder2.String())
-		scrollContainer.ScrollToBottom()
+		markdownScrollContainer.ScrollToBottom()
 		input.Enable()
 	})
+	submitWithStreamingButton := widget.NewButton("stream away!", func() {
+		inputText := input.Text
+		ch2 := make(chan string, 1)
+		log.Println(inputText)
+		input.Disable()
+		input.SetText("")
+		prevString, _ := boundString.Get()
+		go DoAiWithStreaming(client, ch2, markdown, label, inputText, prevString)
 
-	textInputWidget := container.NewVBox(input, submitButton)
+		go func() {
+			builder2 := strings.Builder{}
+			builder2.WriteString(prevString + "\n\n")
+			for aiResponse := range ch2 {
+				builder2.WriteString(aiResponse)
+				boundString.Set(builder2.String())
+				labelScrollContainer.ScrollToBottom()
+				markdownScrollContainer.ScrollToBottom()
+			}
+			input.Enable()
+		}()
+	})
+
+	textInputWidget := container.NewVBox(input, container.NewHBox(submitButton, submitWithStreamingButton))
 
 	whiteRectangle := canvas.NewRectangle(color.RGBA{
 		R: 255,
@@ -89,7 +118,7 @@ func main() {
 	whiteRectangle.SetMinSize(whiteRectangle.Size())
 
 	content := container.New(layout.NewHBoxLayout(), textWidget, whiteRectangle)
-	content = container.NewBorder(nil, textInputWidget, whiteRectangle, nil, scrollContainer)
+	content = container.NewBorder(nil, textInputWidget, whiteRectangle, nil, markdownOrLabelStack)
 
 	myCanvas.SetContent(content)
 
