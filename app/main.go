@@ -38,8 +38,8 @@ func main() {
 	}
 
 	client := openai.NewClient(
-		option.WithAPIKey(config.APIKey),
-		option.WithBaseURL("https://api.deepseek.com"),
+		option.WithAPIKey(config.OpenAiAPIKey),
+		//option.WithBaseURL("https://api.deepseek.com"),
 	)
 
 	myapp := app.New()
@@ -76,7 +76,7 @@ func main() {
 		input.Disable()
 		input.SetText("")
 		prevString, _ := boundString.Get()
-		go DoAi(client, ch, inputText, prevString)
+		go DoAi(client, ch, inputText, prevString, openai.ChatModelGPT3_5Turbo)
 		aiResponse := <-ch
 		builder2 := strings.Builder{}
 		builder2.WriteString(prevString + "\n\n" + aiResponse)
@@ -93,7 +93,16 @@ func main() {
 		input.Disable()
 		input.SetText("")
 		prevString, _ := boundString.Get()
-		go DoAiWithStreaming(client, ch2, buttonPressed, markdown, labelScrollContainer, inputText, prevString)
+		go DoAiWithStreaming(
+			client,
+			ch2,
+			buttonPressed,
+			markdown,
+			labelScrollContainer,
+			inputText,
+			prevString,
+			openai.ChatModelGPT3_5Turbo,
+		)
 
 		go func() {
 			builder2 := strings.Builder{}

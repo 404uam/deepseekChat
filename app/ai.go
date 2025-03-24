@@ -10,7 +10,13 @@ import (
 	"github.com/openai/openai-go"
 )
 
-func DoAi(client *openai.Client, ch chan string, prompt string, previous string) string {
+func DoAi(
+	client *openai.Client,
+	ch chan string,
+	prompt string,
+	previous string,
+	chatModel ChatModel,
+) string {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
@@ -18,11 +24,11 @@ func DoAi(client *openai.Client, ch chan string, prompt string, previous string)
 
 	chatCompletion, err := client.Chat.Completions.New(ctx,
 		openai.ChatCompletionNewParams{
-			Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
+			Messages: []openai.ChatCompletionMessageParamUnion{
 				openai.UserMessage(previous + "\n" + prompt),
-			}),
+			},
 			Seed:  openai.Int(1),
-			Model: openai.F(DeepseekChat),
+			Model: chatModel,
 		})
 
 	if err != nil {
@@ -35,17 +41,26 @@ func DoAi(client *openai.Client, ch chan string, prompt string, previous string)
 	return response
 }
 
-func DoAiWithStreaming(client *openai.Client, ch chan string, pressed time.Time, markdown *widget.RichText, label *container.Scroll, prompt string, previous string) string {
+func DoAiWithStreaming(
+	client *openai.Client,
+	ch chan string,
+	pressed time.Time,
+	markdown *widget.RichText,
+	label *container.Scroll,
+	prompt string,
+	previous string,
+	chatModel ChatModel,
+) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
 	chatCompletionStream := client.Chat.Completions.NewStreaming(ctx,
 		openai.ChatCompletionNewParams{
-			Messages: openai.F([]openai.ChatCompletionMessageParamUnion{
+			Messages: []openai.ChatCompletionMessageParamUnion{
 				openai.UserMessage(previous + "\n" + prompt),
-			}),
+			},
 			Seed:  openai.Int(1),
-			Model: openai.F(DeepseekChat),
+			Model: chatModel,
 		})
 	acc := openai.ChatCompletionAccumulator{}
 	timeElapsed := time.Duration(0)
@@ -82,7 +97,8 @@ func DoAiWithStreaming(client *openai.Client, ch chan string, pressed time.Time,
 			err := json.Unmarshal([]byte(content.Raw()), &tempWords)
 			if err != nil {
 				println("got err:", err.Error())
-				return ""
+				println(content.Raw())
+				tempWords = ""
 			}
 			println(tempWords)
 			ch <- tempWords
@@ -90,14 +106,19 @@ func DoAiWithStreaming(client *openai.Client, ch chan string, pressed time.Time,
 
 	}
 	if err := chatCompletionStream.Err(); err != nil {
-		panic(err)
+		markdown.AppendMarkdown(err.Error())
+		label.Hide()
+		label.Refresh()
+		markdown.Show()
+		markdown.Refresh()
+		return ""
 	}
 
 	println("Total Tokens:", acc.Usage.TotalTokens)
 	println("Finish Reason:", acc.Choices[0].FinishReason)
 	println("Time from button press to first response: ", timeElapsed.String())
 	markdown.AppendMarkdown(acc.Choices[0].Message.Content + "<br><br>")
-	markdown.AppendMarkdown("<br>")
+	markdown.AppendMarkdown("<br><br>")
 	label.Hide()
 	label.Refresh()
 	markdown.Show()
