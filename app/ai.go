@@ -10,13 +10,7 @@ import (
 	"github.com/openai/openai-go"
 )
 
-func DoAi(
-	client *openai.Client,
-	ch chan string,
-	prompt string,
-	previous string,
-	chatModel ChatModel,
-) string {
+func DoAi(client openai.Client, ch chan string, prompt string, previous string, chatModel ChatModel) string {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
@@ -41,16 +35,7 @@ func DoAi(
 	return response
 }
 
-func DoAiWithStreaming(
-	client *openai.Client,
-	ch chan string,
-	pressed time.Time,
-	markdown *widget.RichText,
-	label *container.Scroll,
-	prompt string,
-	previous string,
-	chatModel ChatModel,
-) string {
+func DoAiWithStreaming(client openai.Client, ch chan string, pressed time.Time, markdown *widget.RichText, label *container.Scroll, prompt string, previous string, chatModel ChatModel) string {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 
