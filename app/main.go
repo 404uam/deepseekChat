@@ -65,6 +65,9 @@ func main() {
 	labelScrollContainer := container.NewScroll(label)
 	markdownOrLabelStack := container.NewStack(markdownScrollContainer, labelScrollContainer)
 	labelScrollContainer.Hide()
+	activity := widget.NewActivity()
+	activity.Hide()
+	inputAndButtons := container.NewBorder(nil, nil, activity, nil, input)
 
 	boundString := binding.NewString()
 	label.Bind(boundString)
@@ -74,6 +77,8 @@ func main() {
 		log.Println(inputText)
 		input.Disable()
 		input.SetText("")
+		activity.Start()
+		activity.Show()
 		prevString, _ := boundString.Get()
 		go DoAi(client, ch, inputText, prevString, openai.ChatModelGPT4oMini)
 		aiResponse := <-ch
@@ -82,7 +87,10 @@ func main() {
 		markdown.AppendMarkdown(builder2.String() + "\n\n")
 		boundString.Set(builder2.String())
 		markdownScrollContainer.ScrollToBottom()
+		activity.Stop()
+		activity.Hide()
 		input.Enable()
+		inputAndButtons.Refresh()
 	})
 	submitWithStreamingButton := widget.NewButton("stream away!", func() {
 		buttonPressed := time.Now()
@@ -91,6 +99,8 @@ func main() {
 		log.Println(inputText)
 		input.Disable()
 		input.SetText("")
+		activity.Start()
+		activity.Show()
 		prevString, _ := boundString.Get()
 		go DoAiWithStreaming(
 			client,
@@ -115,11 +125,14 @@ func main() {
 			builder2.WriteString("\n\n")
 			boundString.Set(builder2.String())
 			markdownScrollContainer.ScrollToBottom()
+			activity.Stop()
+			activity.Hide()
 			input.Enable()
+			inputAndButtons.Refresh()
 		}()
 	})
 
-	textInputWidget := container.NewVBox(input, container.NewHBox(submitButton, submitWithStreamingButton))
+	textInputWidget := container.NewVBox(inputAndButtons, container.NewHBox(submitButton, submitWithStreamingButton))
 
 	whiteRectangle := canvas.NewRectangle(color.RGBA{
 		R: 255,
