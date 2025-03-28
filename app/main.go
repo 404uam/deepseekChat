@@ -7,7 +7,6 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -76,7 +75,7 @@ func main() {
 		input.Disable()
 		input.SetText("")
 		prevString, _ := boundString.Get()
-		go DoAi(client, ch, inputText, prevString, openai.ChatModelGPT3_5Turbo)
+		go DoAi(client, ch, inputText, prevString, openai.ChatModelGPT4oMini)
 		aiResponse := <-ch
 		builder2 := strings.Builder{}
 		builder2.WriteString(prevString + "\n\n" + aiResponse)
@@ -131,10 +130,15 @@ func main() {
 	whiteRectangle.Resize(fyne.NewSize(125, 200))
 	whiteRectangle.SetMinSize(whiteRectangle.Size())
 
-	content := container.New(layout.NewHBoxLayout(), textWidget, whiteRectangle)
-	content = container.NewBorder(nil, textInputWidget, whiteRectangle, nil, markdownOrLabelStack)
+	chatgptContainer := container.NewBorder(nil, textInputWidget, nil, nil, markdownOrLabelStack)
+	deepseekContainer := container.NewBorder(nil, textInputWidget, nil, nil, markdownOrLabelStack)
 
-	myCanvas.SetContent(content)
+	tabs := container.NewAppTabs(
+		container.NewTabItem("ChatGPT", chatgptContainer),
+		container.NewTabItem("Deepseekchat", deepseekContainer),
+	)
+
+	myCanvas.SetContent(tabs)
 
 	window.Resize(fyne.NewSize(800, 600))
 	window.ShowAndRun()
