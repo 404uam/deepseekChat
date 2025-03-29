@@ -125,7 +125,7 @@ func main() {
 	whiteRectangle.SetMinSize(whiteRectangle.Size())
 
 	tabs := container.NewAppTabs(
-		container.NewTabItem("ChatGPT", widget.NewLabel("LL")),
+		container.NewTabItem("ChatGPT", gui.NewChatGPTWidget(config.OpenAiAPIKey)),
 		container.NewTabItem("Deepseekchat", gui.NewDeepseekWidget(config.DeepseekAPIKey)),
 	)
 

@@ -27,6 +27,7 @@ func NewDeepseekWidget(apiKey string) *DeepseekWidget {
 		option.WithBaseURL("https://api.deepseek.com"),
 	)
 	activity := widget.NewActivity()
+	activity.Hide()
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Enter your prompt...")
 	inputActivity := container.NewBorder(nil, nil, activity, nil, input)
@@ -41,6 +42,7 @@ func NewDeepseekWidget(apiKey string) *DeepseekWidget {
 	labelScrollContainer := container.NewScroll(label)
 
 	boundString := binding.NewString()
+	label.Bind(boundString)
 
 	submitWithStreamingButton := widget.NewButton("stream away!", func() {
 		buttonPressed := time.Now()
@@ -91,7 +93,7 @@ func NewDeepseekWidget(apiKey string) *DeepseekWidget {
 	return deepseekWidget
 }
 
-func (d DeepseekWidget) CreateRenderer() fyne.WidgetRenderer {
+func (d *DeepseekWidget) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(
 		container.NewBorder(nil, d.textInputWidget, nil, nil, d.markdownOrLabelStack),
 	)
