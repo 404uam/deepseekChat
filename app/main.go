@@ -37,6 +37,7 @@ func main() {
 		container.NewTabItem("ChatGPT (4o-mini)", gui.NewChatGPTWidget(config.OpenAiAPIKey)),
 		container.NewTabItem("Deepseekchat", gui.NewDeepseekChatWidget(config.DeepseekAPIKey)),
 		container.NewTabItem("Deepseek Reasoner", gui.NewDeepseekReasonerWidget(config.DeepseekAPIKey)),
+		container.NewTabItem("Assistant", gui.NewAssistantWidget(config.OpenAiAPIKey)),
 	)
 
 	myCanvas.SetContent(tabs)
